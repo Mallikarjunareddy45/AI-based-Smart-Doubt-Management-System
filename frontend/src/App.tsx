@@ -1,0 +1,101 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
+import { ProtectedRoute, RoleGuard, DashboardRedirect } from './routes';
+import { Layout } from './components/common/Layout';
+
+// Pages
+import { Landing } from './pages/Landing';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { StudentDashboard } from './pages/StudentDashboard';
+import { TutorDashboard } from './pages/TutorDashboard';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { AskQuestion } from './pages/AskQuestion';
+import { EnrollCourse } from './pages/EnrollCourse';
+import { QuestionDetails } from './pages/QuestionDetails';
+
+// Create React Query Client instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+import { useAuth } from './context/AuthContext';
+
+export const RootRedirect: React.FC = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated && user) {
+    const userRoles = user.roles.map((r) => r.name);
+    if (userRoles.includes('admin')) return <Navigate to="/admin" replace />;
+    if (userRoles.includes('tutor')) return <Navigate to="/tutor" replace />;
+    return <Navigate to="/student" replace />;
+  }
+
+  return <Landing />;
+};
+
+export const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <SocketProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<RootRedirect />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* Protected Workspace Layout */}
+              <Route element={<ProtectedRoute />}>
+                {/* Landing Redirect checks role to forward home */}
+                <Route path="/dashboard" element={<DashboardRedirect />} />
+                
+                {/* Student Workspace */}
+                <Route element={<RoleGuard allowedRoles={['student']} />}>
+                  <Route path="/student" element={<Layout><StudentDashboard /></Layout>} />
+                  <Route path="/student/ask" element={<Layout><AskQuestion /></Layout>} />
+                  <Route path="/student/courses/enroll" element={<Layout><EnrollCourse /></Layout>} />
+                </Route>
+
+                {/* Tutor Workspace */}
+                <Route element={<RoleGuard allowedRoles={['tutor']} />}>
+                  <Route path="/tutor" element={<Layout><TutorDashboard /></Layout>} />
+                </Route>
+
+                {/* Admin Workspace */}
+                <Route element={<RoleGuard allowedRoles={['admin']} />}>
+                  <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+                </Route>
+
+                {/* Shared Workspace routes */}
+                <Route path="/questions/:questionId" element={<Layout><QuestionDetails /></Layout>} />
+              </Route>
+
+              {/* Fallback Redirection */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </SocketProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+};
+export default App;

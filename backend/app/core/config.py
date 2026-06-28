@@ -22,7 +22,13 @@ class Settings(BaseSettings):
     # CORS Origins (Comma separated string or JSON list)
     BACKEND_CORS_ORIGINS: Annotated[
         List[str], BeforeValidator(parse_cors)
-    ] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    ] = [
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://localhost",
+        "https://ai-based-smart-doubt-management-system-1.onrender.com"
+    ]
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "SUPER_SECRET_SECURITY_PASSPHRASE_CHANGE_IN_PRODUCTION")

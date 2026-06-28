@@ -34,7 +34,7 @@ services:
   web:
     build:
       context: ./backend
-      dockerfile: ../docker/backend.Dockerfile
+      dockerfile: Dockerfile
     container_name: doubt_web
     restart: always
     command: sh -c "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -55,7 +55,7 @@ services:
   worker:
     build:
       context: ./backend
-      dockerfile: ../docker/backend.Dockerfile
+      dockerfile: Dockerfile
     container_name: doubt_worker
     restart: always
     command: celery -A app.workers.celery_app.celery_app worker --loglevel=info --pool=solo
@@ -74,7 +74,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: ../docker/frontend.Dockerfile
+      dockerfile: Dockerfile
     container_name: doubt_frontend
     restart: always
     ports:

@@ -33,10 +33,18 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) return;
 
-      // Build websocket url using current host context (Vite server proxies ws to FastAPI backend)
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      const wsUrl = `${protocol}//${host}/ws/${user.id}?token=${accessToken}`;
+      // Build websocket url using current host context or VITE_WS_URL env variable
+      const customWsUrl = import.meta.env.VITE_WS_URL as string;
+      let wsUrl: string;
+      if (customWsUrl) {
+        // Convert HTTP/HTTPS URLs to WS/WSS protocols
+        const normalizedWsUrl = customWsUrl.replace(/^http/, 'ws');
+        wsUrl = `${normalizedWsUrl}/ws/${user.id}?token=${accessToken}`;
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        wsUrl = `${protocol}//${host}/ws/${user.id}?token=${accessToken}`;
+      }
 
       console.log(`Connecting to WebSocket: ${wsUrl}`);
       const socket = new WebSocket(wsUrl);

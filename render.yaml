@@ -1,14 +1,19 @@
 databases:
   - name: ai-doubt-db
     databaseName: ai_doubt_system
-    user: postgres
     plan: free
+    ipAllowList:
+      - cidrBlock: 0.0.0.0/0
+        description: "Allow connections from anywhere"
 
 services:
   - type: redis
     name: ai-doubt-redis
     plan: free
     maxmemoryPolicy: noeviction
+    ipAllowList:
+      - cidrBlock: 0.0.0.0/0
+        description: "Allow connections from anywhere"
 
   - type: web
     name: ai-doubt-backend
@@ -16,7 +21,7 @@ services:
     plan: free
     dockerContext: backend
     dockerfilePath: backend/Dockerfile
-    startCommand: sh -c "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    dockerCommand: sh -c "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -39,7 +44,7 @@ services:
         fromService:
           type: web
           name: ai-doubt-frontend
-          property: url
+          property: host
 
   - type: worker
     name: ai-doubt-worker
@@ -47,7 +52,7 @@ services:
     plan: free
     dockerContext: backend
     dockerfilePath: backend/Dockerfile
-    startCommand: celery -A app.workers.celery_app.celery_app worker --loglevel=info --pool=solo
+    dockerCommand: celery -A app.workers.celery_app.celery_app worker --loglevel=info --pool=solo
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -64,7 +69,7 @@ services:
         fromService:
           type: web
           name: ai-doubt-backend
-          envVar: SECRET_KEY
+          envVarName: SECRET_KEY
 
       - key: ENVIRONMENT
         value: production
@@ -79,10 +84,10 @@ services:
         fromService:
           type: web
           name: ai-doubt-backend
-          property: url
+          property: host
 
       - key: VITE_WS_URL
         fromService:
           type: web
           name: ai-doubt-backend
-          property: url
+          property: host

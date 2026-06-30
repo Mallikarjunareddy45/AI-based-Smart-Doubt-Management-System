@@ -37,8 +37,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       const customWsUrl = import.meta.env.VITE_WS_URL as string;
       let wsUrl: string;
       if (customWsUrl) {
-        // Convert HTTP/HTTPS URLs to WS/WSS protocols
-        const normalizedWsUrl = customWsUrl.replace(/^http/, 'ws');
+        // Convert HTTP/HTTPS URLs to WS/WSS protocols, or prepend wss:// if it is a raw hostname
+        const normalizedWsUrl = customWsUrl.startsWith('http')
+          ? customWsUrl.replace(/^http/, 'ws')
+          : `wss://${customWsUrl}`;
         wsUrl = `${normalizedWsUrl}/ws/${user.id}?token=${accessToken}`;
       } else {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

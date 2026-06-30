@@ -81,7 +81,6 @@ services:
   - type: web
     name: ai-doubt-frontend
     runtime: static
-    region: virginia
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
     envVars:

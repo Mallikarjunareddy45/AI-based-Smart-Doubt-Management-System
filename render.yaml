@@ -37,7 +37,7 @@ services:
 
       - key: BACKEND_CORS_ORIGINS
         fromService:
-          type: static
+          type: web
           name: ai-doubt-frontend
           property: url
 
@@ -69,8 +69,9 @@ services:
       - key: ENVIRONMENT
         value: production
 
-  - type: static
+  - type: web
     name: ai-doubt-frontend
+    runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
     envVars:

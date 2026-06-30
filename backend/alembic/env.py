@@ -28,7 +28,10 @@ target_metadata = Base.metadata
 
 def get_url():
     # Fetch database url dynamically from system environment if present
-    return os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    if url and url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    return url
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

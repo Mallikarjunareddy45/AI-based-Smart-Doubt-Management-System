@@ -32,10 +32,8 @@ def get_url():
     if url:
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        if "?" in url:
-            base, query = url.split("?", 1)
-            params = [p for p in query.split("&") if not p.startswith("sslmode=")]
-            url = f"{base}?{'&'.join(params)}" if params else base
+        import re
+        url = re.sub(r'([-a-zA-Z0-9]+)-a\.(.*)\.render\.com', r'\1.\2.render.com', url)
     return url
 
 def run_migrations_offline() -> None:

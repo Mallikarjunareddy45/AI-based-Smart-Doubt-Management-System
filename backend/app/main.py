@@ -31,19 +31,16 @@ app.add_middleware(
 )
 
 # Mount API V1 Routing Group
-@app.middleware("http")
-async def catch_exceptions_middleware(request, call_next):
-    try:
-        return await call_next(request)
-    except Exception as e:
-        import traceback
-        from fastapi.responses import JSONResponse
-        tb = traceback.format_exc()
-        logger.error(f"Unhandled server exception: {tb}")
-        return JSONResponse(
-            status_code=500,
-            content={"detail": str(e), "traceback": tb}
-        )
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request, exc):
+    import traceback
+    from fastapi.responses import JSONResponse
+    tb = traceback.format_exc()
+    logger.error(f"Unhandled server exception: {tb}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "traceback": tb}
+    )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 

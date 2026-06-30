@@ -3,7 +3,7 @@ databases:
     databaseName: ai_doubt_system
     plan: free
     ipAllowList:
-      - cidrBlock: 0.0.0.0/0
+      - source: 0.0.0.0/0
         description: "Allow connections from anywhere"
 
 services:
@@ -12,7 +12,7 @@ services:
     plan: free
     maxmemoryPolicy: noeviction
     ipAllowList:
-      - cidrBlock: 0.0.0.0/0
+      - source: 0.0.0.0/0
         description: "Allow connections from anywhere"
 
   - type: web

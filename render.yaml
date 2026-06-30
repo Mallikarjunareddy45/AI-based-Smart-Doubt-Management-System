@@ -1,5 +1,5 @@
 databases:
-  - name: ai-doubt-db-v2
+  - name: ai-doubt-db
     databaseName: ai_doubt_system
     plan: free
     region: virginia
@@ -9,7 +9,7 @@ databases:
 
 services:
   - type: redis
-    name: ai-doubt-redis-v2
+    name: ai-doubt-redis
     plan: free
     region: virginia
     maxmemoryPolicy: noeviction
@@ -18,7 +18,7 @@ services:
         description: "Allow connections from anywhere"
 
   - type: web
-    name: ai-doubt-backend-v2
+    name: ai-doubt-backend
     env: docker
     plan: free
     region: virginia
@@ -28,13 +28,13 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: ai-doubt-db-v2
+          name: ai-doubt-db
           property: connectionString
 
       - key: REDIS_URL
         fromService:
           type: redis
-          name: ai-doubt-redis-v2
+          name: ai-doubt-redis
           property: connectionString
 
       - key: SECRET_KEY
@@ -46,11 +46,11 @@ services:
       - key: BACKEND_CORS_ORIGINS
         fromService:
           type: web
-          name: ai-doubt-frontend-v2
+          name: ai-doubt-frontend
           property: host
 
   - type: worker
-    name: ai-doubt-worker-v2
+    name: ai-doubt-worker
     env: docker
     plan: free
     region: virginia
@@ -60,26 +60,26 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: ai-doubt-db-v2
+          name: ai-doubt-db
           property: connectionString
 
       - key: REDIS_URL
         fromService:
           type: redis
-          name: ai-doubt-redis-v2
+          name: ai-doubt-redis
           property: connectionString
 
       - key: SECRET_KEY
         fromService:
           type: web
-          name: ai-doubt-backend-v2
+          name: ai-doubt-backend
           envVarKey: SECRET_KEY
 
       - key: ENVIRONMENT
         value: production
 
   - type: web
-    name: ai-doubt-frontend-v2
+    name: ai-doubt-frontend
     runtime: static
     region: virginia
     buildCommand: cd frontend && npm install && npm run build
@@ -88,11 +88,11 @@ services:
       - key: VITE_API_URL
         fromService:
           type: web
-          name: ai-doubt-backend-v2
+          name: ai-doubt-backend
           property: host
 
       - key: VITE_WS_URL
         fromService:
           type: web
-          name: ai-doubt-backend-v2
+          name: ai-doubt-backend
           property: host

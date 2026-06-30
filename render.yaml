@@ -22,18 +22,22 @@ services:
         fromDatabase:
           name: ai-doubt-db
           property: connectionString
+
       - key: REDIS_URL
         fromService:
           type: redis
           name: ai-doubt-redis
           property: connectionString
+
       - key: SECRET_KEY
         generateValue: true
+
       - key: ENVIRONMENT
         value: production
+
       - key: BACKEND_CORS_ORIGINS
         fromService:
-          type: web
+          type: static
           name: ai-doubt-frontend
           property: url
 
@@ -49,31 +53,33 @@ services:
         fromDatabase:
           name: ai-doubt-db
           property: connectionString
+
       - key: REDIS_URL
         fromService:
           type: redis
           name: ai-doubt-redis
           property: connectionString
+
       - key: SECRET_KEY
         fromService:
           type: web
           name: ai-doubt-backend
           envVar: SECRET_KEY
+
       - key: ENVIRONMENT
         value: production
 
-  - type: web
+  - type: static
     name: ai-doubt-frontend
-    env: static
-    plan: free
     buildCommand: cd frontend && npm install && npm run build
-    publishDir: frontend/dist
+    staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
         fromService:
           type: web
           name: ai-doubt-backend
           property: url
+
       - key: VITE_WS_URL
         fromService:
           type: web

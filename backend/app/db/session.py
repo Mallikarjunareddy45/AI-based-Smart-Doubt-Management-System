@@ -10,8 +10,10 @@ DATABASE_URL = os.getenv(
 if DATABASE_URL:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    import re
-    DATABASE_URL = re.sub(r'([-a-zA-Z0-9]+)-a\.(.*)\.render\.com', r'\1.\2.render.com', DATABASE_URL)
+    if "?" in DATABASE_URL:
+        base, query = DATABASE_URL.split("?", 1)
+        params = [p for p in query.split("&") if not p.startswith("sslmode=")]
+        DATABASE_URL = f"{base}?{'&'.join(params)}" if params else base
 
 # Create engine with connection pool configurations optimized for concurrency
 engine = create_engine(

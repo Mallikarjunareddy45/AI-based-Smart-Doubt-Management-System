@@ -48,8 +48,10 @@ class Settings(BaseSettings):
             return "postgresql://postgres:postgres@localhost:5432/ai_doubt_system"
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql://", 1)
-        import re
-        v = re.sub(r'([-a-zA-Z0-9]+)-a\.(.*)\.render\.com', r'\1.\2.render.com', v)
+        if "?" in v:
+            base, query = v.split("?", 1)
+            params = [p for p in query.split("&") if not p.startswith("sslmode=")]
+            v = f"{base}?{'&'.join(params)}" if params else base
         return v
     
     # Redis & Celery

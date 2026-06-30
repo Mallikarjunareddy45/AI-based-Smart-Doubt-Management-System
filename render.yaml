@@ -69,7 +69,7 @@ services:
         fromService:
           type: web
           name: ai-doubt-backend
-          envVarName: SECRET_KEY
+          envVarKey: SECRET_KEY
 
       - key: ENVIRONMENT
         value: production

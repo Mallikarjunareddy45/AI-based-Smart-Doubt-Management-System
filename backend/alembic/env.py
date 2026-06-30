@@ -29,8 +29,13 @@ target_metadata = Base.metadata
 def get_url():
     # Fetch database url dynamically from system environment if present
     url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
-    if url and url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql://", 1)
+    if url:
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        if "?" in url:
+            base, query = url.split("?", 1)
+            params = [p for p in query.split("&") if not p.startswith("sslmode=")]
+            url = f"{base}?{'&'.join(params)}" if params else base
     return url
 
 def run_migrations_offline() -> None:

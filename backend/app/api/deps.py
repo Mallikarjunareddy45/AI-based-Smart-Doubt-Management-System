@@ -118,6 +118,6 @@ class RateLimiter:
             pipe.expire(key, self.window_seconds)
             pipe.execute()
             
-        except redis.RedisError:
+        except Exception:
             # Gracefully log warning and bypass check if Redis goes offline, maintaining endpoint availability
             pass

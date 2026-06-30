@@ -7,8 +7,13 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL", 
     "postgresql://postgres:postgres@localhost:5432/ai_doubt_system"
 )
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    if "?" in DATABASE_URL:
+        base, query = DATABASE_URL.split("?", 1)
+        params = [p for p in query.split("&") if not p.startswith("sslmode=")]
+        DATABASE_URL = f"{base}?{'&'.join(params)}" if params else base
 
 # Create engine with connection pool configurations optimized for concurrency
 engine = create_engine(

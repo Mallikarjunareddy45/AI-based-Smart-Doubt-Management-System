@@ -44,9 +44,15 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: Optional[str]) -> str:
-        if isinstance(v, str) and v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql://", 1)
-        return v or "postgresql://postgres:postgres@localhost:5432/ai_doubt_system"
+        if not v:
+            return "postgresql://postgres:postgres@localhost:5432/ai_doubt_system"
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql://", 1)
+        if "?" in v:
+            base, query = v.split("?", 1)
+            params = [p for p in query.split("&") if not p.startswith("sslmode=")]
+            v = f"{base}?{'&'.join(params)}" if params else base
+        return v
     
     # Redis & Celery
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")

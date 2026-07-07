@@ -26,12 +26,12 @@ from app.db.base import Base
 # Set target metadata for autogenerate detection
 target_metadata = Base.metadata
 
-from app.db.session import get_working_db_url
+from app.db.session import get_normalized_db_url
 
 def get_url():
     # Fetch database url dynamically from system environment if present
     url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
-    return get_working_db_url(url)
+    return get_normalized_db_url(url)
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

@@ -21,6 +21,20 @@ app = FastAPI(
 
 # CORS configurations
 origins = [str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS] if settings.BACKEND_CORS_ORIGINS else []
+# Ensure all origins have protocol prefix (e.g. prepending https:// if host-only)
+origins = [f"https://{org}" if not org.startswith("http") else org for org in origins]
+
+# Add explicit required origins to be absolutely sure
+required_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "https://ai-based-smart-doubt-management-system-1.onrender.com"
+]
+for req_org in required_origins:
+    if req_org not in origins:
+        origins.append(req_org)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

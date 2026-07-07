@@ -1,7 +1,7 @@
 import requests
 import json
 
-base_url = "https://ai-based-smart-doubt-management-system.onrender.com/api/v1/auth"
+base_url = "https://ai-doubt-backend.onrender.com/api/v1/auth"
 
 def test_production():
     payload = {

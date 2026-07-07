@@ -34,7 +34,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       if (!accessToken) return;
 
       // Build websocket url using current host context or VITE_WS_URL env variable
-      const customWsUrl = import.meta.env.VITE_WS_URL as string;
+      let customWsUrl = (import.meta.env.VITE_WS_URL as string) || 'ai-doubt-backend.onrender.com';
+      if (customWsUrl.includes('ai-based-smart-doubt-management-system.onrender.com')) {
+        customWsUrl = customWsUrl.replace('ai-based-smart-doubt-management-system.onrender.com', 'ai-doubt-backend.onrender.com');
+      }
       let wsUrl: string;
       if (customWsUrl) {
         // Convert HTTP/HTTPS URLs to WS/WSS protocols, or prepend wss:// if it is a raw hostname

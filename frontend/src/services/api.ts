@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-// Create central Axios instance utilizing Vite proxy configuration in dev, or relative pathing in prod
-let apiBaseUrl = (import.meta.env.VITE_API_URL as string) || '/api/v1';
-if (apiBaseUrl && apiBaseUrl !== '/api/v1') {
+let apiBaseUrl = (import.meta.env.VITE_API_URL as string) || 'https://ai-doubt-backend.onrender.com';
+if (apiBaseUrl) {
+  if (apiBaseUrl.includes('ai-based-smart-doubt-management-system.onrender.com')) {
+    apiBaseUrl = apiBaseUrl.replace('ai-based-smart-doubt-management-system.onrender.com', 'ai-doubt-backend.onrender.com');
+  }
   if (!apiBaseUrl.startsWith('http') && !apiBaseUrl.startsWith('/')) {
     apiBaseUrl = 'https://' + apiBaseUrl;
   }

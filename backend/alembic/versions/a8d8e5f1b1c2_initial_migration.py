@@ -23,8 +23,9 @@ class VectorType(sa.types.UserDefinedType):
         return f"vector({self.dim})"
 
 def upgrade() -> None:
-    # 1. Enable pgvector extension
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    # 1. Enable pgvector extension in PostgreSQL
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
     # 2. Create Permission Table
     op.create_table(
@@ -314,7 +315,7 @@ def upgrade() -> None:
         sa.Column('entity_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('ip_address', sa.String(length=45), nullable=True),
         sa.Column('user_agent', sa.String(length=255), nullable=True),
-        sa.Column('payload', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('payload', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='SET NULL'),
         sa.PrimaryKeyConstraint('id')
@@ -346,7 +347,7 @@ def upgrade() -> None:
         sa.Column('title', sa.String(length=255), nullable=False),
         sa.Column('description', sa.String(length=1000), nullable=True),
         sa.Column('report_type', sa.String(length=50), nullable=False),
-        sa.Column('data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column('data', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['generated_by'], ['user.id'], ondelete='SET NULL'),
         sa.PrimaryKeyConstraint('id')
@@ -419,5 +420,5 @@ def downgrade() -> None:
     op.drop_table('role')
     op.drop_index(op.f('ix_permission_name'), table_name='permission')
     op.drop_table('permission')
-    
-    op.execute("DROP EXTENSION IF EXISTS vector;")
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("DROP EXTENSION IF EXISTS vector;")

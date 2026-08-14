@@ -1,0 +1,131 @@
+"""add_saas_course_structure
+
+Revision ID: 70995c78aaf7
+Revises: a8d8e5f1b1c2
+Create Date: 2026-07-18 15:20:27.759505
+
+"""
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+from sqlalchemy import Text
+
+class VectorType(sa.types.UserDefinedType):
+    def __init__(self, dim):
+        self.dim = dim
+    def get_col_spec(self, **kw):
+        return f"vector({self.dim})"
+
+# revision identifiers, used by Alembic.
+revision = '70995c78aaf7'
+down_revision = 'a8d8e5f1b1c2'
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    # 1. Create Category table
+    op.create_table('category',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('description', sa.String(length=255), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_category_name'), 'category', ['name'], unique=True)
+
+    # 2. Create Section table
+    op.create_table('section',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('course_id', sa.UUID(), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.String(length=500), nullable=True),
+    sa.Column('order', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['course_id'], ['course.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # 3. Create Lesson table
+    op.create_table('lesson',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('section_id', sa.UUID(), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('lesson_type', sa.String(length=50), nullable=False),
+    sa.Column('order', sa.Integer(), nullable=False),
+    sa.Column('video_url', sa.String(length=512), nullable=True),
+    sa.Column('pdf_url', sa.String(length=512), nullable=True),
+    sa.Column('notes_content', sa.Text(), nullable=True),
+    sa.Column('duration_seconds', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['section_id'], ['section.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # 4. Create Lesson Progress table
+    op.create_table('lesson_progress',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('student_id', sa.UUID(), nullable=False),
+    sa.Column('lesson_id', sa.UUID(), nullable=False),
+    sa.Column('is_completed', sa.Boolean(), nullable=False),
+    sa.Column('watch_time_seconds', sa.Integer(), nullable=False),
+    sa.Column('completed_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['lesson_id'], ['lesson.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['student_id'], ['student.user_id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('student_id', 'lesson_id', name='uq_student_lesson_progress')
+    )
+
+    # 5. Create Lesson Note table
+    op.create_table('lesson_note',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('student_id', sa.UUID(), nullable=False),
+    sa.Column('lesson_id', sa.UUID(), nullable=False),
+    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['lesson_id'], ['lesson.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['student_id'], ['student.user_id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('student_id', 'lesson_id', name='uq_student_lesson_note')
+    )
+
+    # 6. Create Lesson Bookmark table
+    op.create_table('lesson_bookmark',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('student_id', sa.UUID(), nullable=False),
+    sa.Column('lesson_id', sa.UUID(), nullable=False),
+    sa.Column('note', sa.String(length=500), nullable=True),
+    sa.Column('timestamp_seconds', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['lesson_id'], ['lesson.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['student_id'], ['student.user_id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.add_column('course', sa.Column('category_id', sa.UUID(), nullable=True))
+    op.add_column('course', sa.Column('instructor_id', sa.UUID(), nullable=True))
+    op.add_column('course', sa.Column('is_published', sa.Boolean(), nullable=False, server_default=sa.text('false')))
+    op.add_column('course', sa.Column('price', sa.Float(), nullable=False, server_default='0.0'))
+    if op.get_bind().dialect.name == "postgresql":
+        op.create_foreign_key(None, 'course', 'category', ['category_id'], ['id'], ondelete='SET NULL')
+        op.create_foreign_key(None, 'course', 'user', ['instructor_id'], ['id'], ondelete='SET NULL')
+    op.add_column('tutor', sa.Column('subjects', sa.String(length=500), nullable=True))
+    # ### end Alembic commands ###
+
+
+def downgrade() -> None:
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_column('tutor', 'subjects')
+    if op.get_bind().dialect.name == "postgresql":
+        op.drop_constraint(None, 'course', type_='foreignkey')
+        op.drop_constraint(None, 'course', type_='foreignkey')
+    op.drop_column('course', 'price')
+    op.drop_column('course', 'is_published')
+    op.drop_column('course', 'instructor_id')
+    op.drop_column('course', 'category_id')
+    op.drop_table('lesson_progress')
+    op.drop_table('lesson_note')
+    op.drop_table('lesson_bookmark')
+    op.drop_table('lesson')
+    op.drop_table('section')
+    op.drop_index(op.f('ix_category_name'), table_name='category')
+    op.drop_table('category')
+    # ### end Alembic commands ###

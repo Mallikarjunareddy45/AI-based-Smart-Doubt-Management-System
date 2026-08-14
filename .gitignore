@@ -24,6 +24,7 @@ ENV/
 
 # Databases
 *.sqlite3
+*.db
 pgdata/
 
 # Local env files

@@ -194,22 +194,30 @@ export const StudentDashboard: React.FC = () => {
               {enrollments.map((enr) => (
                 <div 
                   key={enr.id}
-                  className="p-5 rounded-2xl bg-white border border-slate-200/60 flex items-start gap-4"
+                  className="p-5 rounded-2xl bg-white border border-slate-200/60 flex flex-col gap-3"
                 >
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-600 font-bold text-xs uppercase shrink-0">
-                    {enr.course?.code.slice(0, 3)}
+                  <div className="flex items-start gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-600 font-bold text-xs uppercase shrink-0">
+                      {enr.course?.code.slice(0, 3)}
+                    </div>
+                    <div className="overflow-hidden flex-1">
+                      <span className="text-[10px] text-brand-600 font-semibold tracking-wide uppercase">
+                        {enr.course?.code}
+                      </span>
+                      <h4 className="font-semibold text-slate-800 text-sm truncate leading-snug">
+                        {enr.course?.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                        {enr.course?.description || 'No description provided.'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="overflow-hidden">
-                    <span className="text-[10px] text-brand-600 font-semibold tracking-wide uppercase">
-                      {enr.course?.code}
-                    </span>
-                    <h4 className="font-semibold text-slate-800 text-sm truncate leading-snug">
-                      {enr.course?.title}
-                    </h4>
-                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
-                      {enr.course?.description || 'No description provided.'}
-                    </p>
-                  </div>
+                  <Link 
+                    to={`/student/courses/${enr.course_id}`} 
+                    className="w-full text-center px-4 py-2 rounded-lg bg-indigo-50 border border-indigo-200/40 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all text-xs font-semibold"
+                  >
+                    Enter Learning Workspace
+                  </Link>
                 </div>
               ))}
             </div>

@@ -17,6 +17,8 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { AskQuestion } from './pages/AskQuestion';
 import { EnrollCourse } from './pages/EnrollCourse';
 import { QuestionDetails } from './pages/QuestionDetails';
+import { CourseWorkspace } from './pages/CourseWorkspace';
+import { CourseBuilder } from './pages/CourseBuilder';
 
 // Create React Query Client instance
 const queryClient = new QueryClient({
@@ -73,11 +75,13 @@ export const App: React.FC = () => {
                   <Route path="/student" element={<Layout><StudentDashboard /></Layout>} />
                   <Route path="/student/ask" element={<Layout><AskQuestion /></Layout>} />
                   <Route path="/student/courses/enroll" element={<Layout><EnrollCourse /></Layout>} />
+                  <Route path="/student/courses/:courseId" element={<Layout><CourseWorkspace /></Layout>} />
                 </Route>
 
                 {/* Tutor Workspace */}
                 <Route element={<RoleGuard allowedRoles={['tutor']} />}>
                   <Route path="/tutor" element={<Layout><TutorDashboard /></Layout>} />
+                  <Route path="/tutor/courses/:courseId/edit" element={<Layout><CourseBuilder /></Layout>} />
                 </Route>
 
                 {/* Admin Workspace */}

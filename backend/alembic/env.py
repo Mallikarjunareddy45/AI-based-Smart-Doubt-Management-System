@@ -81,9 +81,10 @@ def run_migrations_online() -> None:
         )
 
         with context.begin_transaction():
-            # Enable pgvector extension before creating schemas
-            from sqlalchemy import text
-            connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            # Enable pgvector extension before creating schemas in PostgreSQL
+            if connection.dialect.name == "postgresql":
+                from sqlalchemy import text
+                connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
             context.run_migrations()
 
 

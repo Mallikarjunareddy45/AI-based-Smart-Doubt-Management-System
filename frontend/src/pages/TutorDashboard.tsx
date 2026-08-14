@@ -2,24 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { QuestionCluster } from '../types';
-import { Layers, CheckCircle, Clock, Users, ArrowRight, UserPlus, Play } from 'lucide-react';
+import { Layers, CheckCircle, Clock, Users, ArrowRight, UserPlus, Play, BookOpen } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 
 export const TutorDashboard: React.FC = () => {
   const { registerListener } = useSocket();
   const [myClusters, setMyClusters] = useState<QuestionCluster[]>([]);
   const [unassignedClusters, setUnassignedClusters] = useState<QuestionCluster[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchQueues = async () => {
     try {
       setIsLoading(true);
-      const [myRes, unassignedRes] = await Promise.all([
+      const [myRes, unassignedRes, coursesRes] = await Promise.all([
         api.get<QuestionCluster[]>('/tutors/clusters'),
-        api.get<QuestionCluster[]>('/tutors/clusters/unassigned')
+        api.get<QuestionCluster[]>('/tutors/clusters/unassigned'),
+        api.get<any[]>('/courses')
       ]);
       setMyClusters(myRes.data);
       setUnassignedClusters(unassignedRes.data);
+      setCourses(coursesRes.data);
     } catch (err) {
       console.error('Failed to load tutor queues');
     } finally {
@@ -203,6 +206,38 @@ export const TutorDashboard: React.FC = () => {
           )}
         </div>
 
+      </div>
+
+      {/* Tutor Courses List */}
+      <div className="flex flex-col gap-4 mt-8 border-t border-slate-100 pt-8">
+        <h3 className="text-slate-800 font-bold text-base flex items-center gap-2">
+          <BookOpen className="h-4.5 w-4.5 text-slate-500" />
+          My Courses (Syllabus Builder)
+        </h3>
+        
+        {courses.length === 0 ? (
+          <div className="p-8 text-center bg-white rounded-2xl border border-slate-200/60 text-slate-400 text-sm">
+            No courses found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {courses.map((course) => (
+              <div key={course.id} className="p-5 rounded-2xl bg-white border border-slate-200/60 flex flex-col justify-between gap-3 shadow-sm hover-premium">
+                <div>
+                  <span className="text-[10px] text-brand-600 font-semibold tracking-wide uppercase">{course.code}</span>
+                  <h4 className="font-semibold text-slate-800 text-sm truncate">{course.title}</h4>
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">{course.description || 'No description'}</p>
+                </div>
+                <Link 
+                  to={`/tutor/courses/${course.id}/edit`} 
+                  className="w-full text-center px-4 py-2 rounded-lg bg-indigo-50 border border-indigo-200/40 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all text-xs font-semibold"
+                >
+                  Edit Course Syllabus
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -17,8 +17,10 @@ router = APIRouter()
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(deps.RateLimiter(5, 60))])
 def register_user(user_in: UserCreate, db: Session = Depends(deps.get_db)) -> Any:
     """Register a new student user."""
+    email = user_in.email.strip().lower()
+
     # Check if user already exists
-    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -38,10 +40,10 @@ def register_user(user_in: UserCreate, db: Session = Depends(deps.get_db)) -> An
     
     # Create the user base
     new_user = User(
-        email=user_in.email,
+        email=email,
         hashed_password=hashed_pwd,
-        first_name=user_in.first_name,
-        last_name=user_in.last_name,
+        first_name=user_in.first_name.strip(),
+        last_name=user_in.last_name.strip(),
         is_active=True
     )
     
@@ -74,12 +76,29 @@ def register_user(user_in: UserCreate, db: Session = Depends(deps.get_db)) -> An
 @router.post("/login", response_model=Token, dependencies=[Depends(deps.RateLimiter(10, 60))])
 def login(
     db: Session = Depends(deps.get_db),
-    form_data: OAuth2PasswordRequestForm = Depends()
+    form_data: Optional[OAuth2PasswordRequestForm] = Depends(),
+    login_in: Optional[UserLogin] = None
 ) -> Any:
-    """Standard OAuth2 compatible token login."""
+    """Standard OAuth2 compatible token login supporting Form & JSON payloads."""
+    email = None
+    password = None
+
+    if form_data and form_data.username:
+        email = form_data.username.strip().lower()
+        password = form_data.password
+    elif login_in and login_in.email:
+        email = login_in.email.strip().lower()
+        password = login_in.password
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required"
+        )
+
     # Find user
-    user = db.query(User).filter(User.email == form_data.username, User.deleted_at.is_(None)).first()
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+    user = db.query(User).filter(User.email == email, User.deleted_at.is_(None)).first()
+    if not user or not security.verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect email or password"

@@ -6,8 +6,8 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, first_name: string, last_name: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, first_name: string, last_name: string, password: string, role_name?: 'student' | 'tutor') => Promise<User>;
   logout: () => void;
 }
 
@@ -60,12 +60,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     bootstrapAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      // Build standard OAuth2 form payload
       const formData = new FormData();
-      formData.append('username', email);
+      formData.append('username', email.trim());
       formData.append('password', password);
       
       const response = await api.post('/auth/login', formData, {
@@ -79,6 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Fetch user profile
       const userResponse = await api.get<User>('/auth/me');
       setUser(userResponse.data);
+      return userResponse.data;
     } catch (error) {
       setUser(null);
       throw error;
@@ -87,20 +87,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const register = async (email: string, first_name: string, last_name: string, password: string) => {
+  const register = async (
+    email: string, 
+    first_name: string, 
+    last_name: string, 
+    password: string, 
+    role_name: 'student' | 'tutor' = 'student'
+  ): Promise<User> => {
     setIsLoading(true);
     try {
-      // Register new student account
       await api.post('/auth/register', {
-        email,
-        first_name,
-        last_name,
+        email: email.trim(),
+        first_name: first_name.trim(),
+        last_name: last_name.trim(),
         password,
-        role_names: ['student']
+        role_names: [role_name]
       });
       
       // Auto login after registration
-      await login(email, password);
+      return await login(email, password);
     } catch (error) {
       throw error;
     } finally {

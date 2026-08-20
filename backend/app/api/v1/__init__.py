@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, questions, students, tutors, admin, analytics, courses, ai_tutor, quizzes
+from app.api.v1 import auth, questions, students, tutors, admin, analytics, courses, ai_tutor, quizzes, payments
 
 api_router = APIRouter()
 
@@ -12,3 +12,4 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["System A
 api_router.include_router(courses.router, prefix="/courses", tags=["Courses"])
 api_router.include_router(ai_tutor.router, prefix="/ai-tutor", tags=["AI Tutor RAG Engine"])
 api_router.include_router(quizzes.router, prefix="/quizzes", tags=["Quiz & Adaptive Practice Engine"])
+api_router.include_router(payments.router, prefix="/payments", tags=["Payment & Financial Ledger Engine"])

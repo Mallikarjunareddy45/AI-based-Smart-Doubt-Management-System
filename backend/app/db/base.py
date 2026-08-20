@@ -12,3 +12,4 @@ from app.models.notification import Notification  # noqa
 from app.models.audit import ActivityLog, AnalyticsSnapshot, Report  # noqa
 from app.models.rag import LessonChunkEmbedding, AITutorConversation, AITutorMessage  # noqa
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt, QuizAnswer  # noqa
+from app.models.payment import PaymentTransaction  # noqa

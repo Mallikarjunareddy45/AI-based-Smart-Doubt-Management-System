@@ -336,3 +336,164 @@ def get_system_audit_logs(
         query = query.filter(ActivityLog.action == action)
     logs = query.order_by(ActivityLog.created_at.desc()).limit(limit).all()
     return logs
+
+
+# ==========================================
+# SUPER ADMIN: FINANCIALS & USER MANAGEMENT
+# ==========================================
+
+from app.models.payment import PaymentTransaction
+from app.models.course import Category
+from app.models.rag import LessonChunkEmbedding, AITutorMessage
+from app.schemas.payment import FinancialSummaryResponse, PaymentTransactionResponse, UserManagementUpdate
+
+@router.get("/financials", response_model=FinancialSummaryResponse)
+def get_financial_summary(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """Retrieve Super Admin platform revenue and financial transaction ledger."""
+    transactions = db.query(PaymentTransaction).order_by(PaymentTransaction.created_at.desc()).all()
+    
+    total_rev = sum([t.amount for t in transactions if t.status == "succeeded"])
+    succeeded_cnt = sum([1 for t in transactions if t.status == "succeeded"])
+    refunded_cnt = sum([1 for t in transactions if t.status == "refunded"])
+
+    recent_txs = [
+        PaymentTransactionResponse(
+            id=str(t.id),
+            student_id=str(t.student_id),
+            course_id=str(t.course_id) if t.course_id else None,
+            amount=t.amount,
+            currency=t.currency,
+            payment_method=t.payment_method,
+            transaction_id=t.transaction_id,
+            status=t.status,
+            created_at=t.created_at.isoformat()
+        )
+        for t in transactions[:20]
+    ]
+
+    return FinancialSummaryResponse(
+        total_revenue=round(total_rev, 2),
+        total_transactions=len(transactions),
+        successful_transactions=succeeded_cnt,
+        refunded_transactions=refunded_cnt,
+        currency="USD",
+        recent_transactions=recent_txs
+    )
+
+
+@router.get("/users", response_model=List[dict])
+def list_all_users(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """Retrieve full searchable list of registered users and roles (Super Admin)."""
+    users = db.query(User).filter(User.deleted_at.is_(None)).all()
+    res = []
+    for u in users:
+        role_names = [r.name for r in u.roles] if u.roles else ["student"]
+        res.append({
+            "user_id": str(u.id),
+            "email": u.email,
+            "full_name": u.full_name,
+            "is_active": u.is_active,
+            "roles": role_names,
+            "created_at": u.created_at.isoformat()
+        })
+    return res
+
+
+@router.put("/users/{user_id}/status", response_model=dict)
+def toggle_user_status(
+    user_id: UUID,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """Suspend or activate a user account (Super Admin)."""
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target.is_active = not target.is_active
+    db.commit()
+
+    audit = ActivityLog(
+        user_id=current_user.id,
+        action="toggle_user_status",
+        entity_type="user",
+        entity_id=target.id,
+        payload={"is_active": target.is_active}
+    )
+    db.add(audit)
+    db.commit()
+
+    return {"status": "success", "user_id": str(target.id), "is_active": target.is_active}
+
+
+@router.get("/categories", response_model=List[dict])
+def list_categories(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """Retrieve list of all course categories."""
+    categories = db.query(Category).all()
+    return [
+        {
+            "id": str(c.id),
+            "name": c.name,
+            "description": c.description,
+            "courses_count": len(c.courses)
+        }
+        for c in categories
+    ]
+
+
+@router.post("/categories", response_model=dict)
+def create_category(
+    name: str,
+    description: Optional[str] = None,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """Create a new course category (Super Admin)."""
+    cat = Category(
+        name=name,
+        description=description
+    )
+    db.add(cat)
+    db.commit()
+    db.refresh(cat)
+
+    return {
+        "id": str(cat.id),
+        "name": cat.name,
+        "description": cat.description
+    }
+
+
+@router.get("/ai-analytics", response_model=dict)
+def get_ai_usage_analytics(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user)
+) -> Any:
+    """Retrieve AI Token, RAG Vector Indexing, and Chat Usage Metrics (Super Admin)."""
+    total_embeddings = db.query(LessonChunkEmbedding).count()
+    total_ai_messages = db.query(AITutorMessage).count()
+    escalated_ai_messages = db.query(AITutorMessage).filter(AITutorMessage.was_escalated == True).count()
+
+    avg_confidence = 0.85
+    msg_with_score = db.query(AITutorMessage).filter(AITutorMessage.confidence_score.isnot(None)).all()
+    if msg_with_score:
+        avg_confidence = round(sum([m.confidence_score for m in msg_with_score]) / len(msg_with_score), 2)
+
+    return {
+        "total_vector_embeddings": total_embeddings,
+        "total_ai_chat_queries": total_ai_messages,
+        "escalated_doubt_queries": escalated_ai_messages,
+        "average_rag_confidence": avg_confidence,
+        "embedding_model": "SentenceTransformers (all-MiniLM-L6-v2)",
+        "vector_dimensions": 384
+    }
+

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { Course, Enrollment } from '../types';
-import { Search, BookOpen, CheckCircle, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { Search, BookOpen, CheckCircle, ArrowLeft, Loader2, Sparkles, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { CheckoutModal } from '../components/payment/CheckoutModal';
 
 export const EnrollCourse: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +13,10 @@ export const EnrollCourse: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
+
+  // Checkout Modal State
+  const [selectedCourseForCheckout, setSelectedCourseForCheckout] = useState<any | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const fetchCourses = async () => {
     try {
@@ -33,16 +38,9 @@ export const EnrollCourse: React.FC = () => {
     fetchCourses();
   }, []);
 
-  const handleEnroll = async (courseId: string) => {
-    try {
-      setEnrollingId(courseId);
-      await api.post('/students/courses/enroll', { course_id: courseId });
-      setEnrolledIds((prev) => [...prev, courseId]);
-    } catch (err) {
-      console.error('Failed to enroll in course');
-    } finally {
-      setEnrollingId(null);
-    }
+  const handleEnrollClick = (course: any) => {
+    setSelectedCourseForCheckout(course);
+    setIsCheckoutOpen(true);
   };
 
   // Filter based on search queries
@@ -127,11 +125,11 @@ export const EnrollCourse: React.FC = () => {
 
                 <button
                   disabled={isEnrolled || isEnrolling}
-                  onClick={() => handleEnroll(c.id)}
+                  onClick={() => handleEnrollClick(c)}
                   className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${
                     isEnrolled 
                       ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                      : 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/10 hover:shadow-brand-600/20 active:scale-95'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-95'
                   }`}
                 >
                   {isEnrolling ? (
@@ -143,8 +141,8 @@ export const EnrollCourse: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Enroll in Course
+                      <CreditCard className="h-3.5 w-3.5" />
+                      {!c.price || c.price === 0 ? 'Free Enrollment' : `Purchase Course ($${c.price})`}
                     </>
                   )}
                 </button>
@@ -153,6 +151,20 @@ export const EnrollCourse: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        course={selectedCourseForCheckout}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSuccess={() => {
+          setIsCheckoutOpen(false);
+          fetchCourses();
+          if (selectedCourseForCheckout) {
+            navigate(`/course/${selectedCourseForCheckout.id}`);
+          }
+        }}
+      />
     </div>
   );
 };

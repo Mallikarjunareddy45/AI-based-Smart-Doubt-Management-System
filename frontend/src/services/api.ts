@@ -34,21 +34,10 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to catch auth failures (like expired tokens) and trigger redirection
+// Response interceptor to handle errors gracefully without redirecting to login walls
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear expired credentials from client state
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      
-      // Redirect to login if on protected screen
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && window.location.pathname !== '/') {
-        window.location.href = '/login?expired=true';
-      }
-    }
     return Promise.reject(error);
   }
 );

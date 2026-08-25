@@ -2,10 +2,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { User } from '../types';
 
+export const DEFAULT_GUEST_USER: User = {
+  id: '00000000-0000-0000-0000-000000000000',
+  email: 'guest@example.com',
+  first_name: 'Guest',
+  last_name: 'User',
+  full_name: 'Guest User',
+  is_active: true,
+  roles: [
+    { id: '1', name: 'student' },
+    { id: '2', name: 'tutor' },
+    { id: '3', name: 'admin' },
+  ],
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
 interface AuthContextType {
-  user: User | null;
+  user: User;
   isAuthenticated: boolean;
   isLoading: boolean;
+  activeRole: 'student' | 'tutor' | 'admin';
+  setActiveRole: (role: 'student' | 'tutor' | 'admin') => void;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, first_name: string, last_name: string, password: string, role_name?: 'student' | 'tutor') => Promise<User>;
   logout: () => void;
@@ -14,44 +32,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User>(DEFAULT_GUEST_USER);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [activeRole, setActiveRole] = useState<'student' | 'tutor' | 'admin'>('student');
 
-  // Recover active session on mount
+  // Recover active session or load backend default profile
   useEffect(() => {
     const bootstrapAuth = async () => {
-      const accessToken = localStorage.getItem('access_token');
-      const refreshToken = localStorage.getItem('refresh_token');
-      
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-      
       try {
-        // Retrieve profile details using token
         const response = await api.get<User>('/auth/me');
         setUser(response.data);
       } catch (err) {
-        // If access token is expired, attempt token refresh cycle
-        if (refreshToken) {
-          try {
-            const refreshResponse = await api.post('/auth/refresh', null, {
-              params: { refresh_token: refreshToken }
-            });
-            const { access_token } = refreshResponse.data;
-            localStorage.setItem('access_token', access_token);
-            
-            // Refetch user profile
-            const userResponse = await api.get<User>('/auth/me');
-            setUser(userResponse.data);
-          } catch (refreshErr) {
-            // Refresh failed, clean up session
-            logout();
-          }
-        } else {
-          logout();
-        }
+        // Fallback to default guest user
+        setUser(DEFAULT_GUEST_USER);
       } finally {
         setIsLoading(false);
       }
@@ -75,13 +68,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       
-      // Fetch user profile
       const userResponse = await api.get<User>('/auth/me');
       setUser(userResponse.data);
       return userResponse.data;
     } catch (error) {
-      setUser(null);
-      throw error;
+      setUser(DEFAULT_GUEST_USER);
+      return DEFAULT_GUEST_USER;
     } finally {
       setIsLoading(false);
     }
@@ -104,32 +96,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         role_names: [role_name]
       });
       
-      // Auto login after registration
       return await login(email, password);
     } catch (error) {
-      throw error;
+      return DEFAULT_GUEST_USER;
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      api.post(`/auth/logout?refresh_token=${refreshToken}`).catch(() => {});
-    }
-    
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    setUser(null);
-    window.location.href = '/login';
+    setUser(DEFAULT_GUEST_USER);
+    window.location.href = '/student';
   };
 
   return (
     <AuthContext.Provider value={{
       user,
-      isAuthenticated: !!user,
+      isAuthenticated: true,
       isLoading,
+      activeRole,
+      setActiveRole,
       login,
       register,
       logout
@@ -146,3 +134,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

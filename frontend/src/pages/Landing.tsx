@@ -18,14 +18,11 @@ export const Landing: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link to="/login" className="text-slate-300 hover:text-white text-sm font-semibold transition-colors">
-            Sign In
-          </Link>
           <Link 
-            to="/register" 
+            to="/student" 
             className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold shadow-lg shadow-brand-600/20 transition-all hover:-translate-y-0.5"
           >
-            Sign Up
+            Enter Workspace
           </Link>
         </div>
       </header>
@@ -47,17 +44,11 @@ export const Landing: React.FC = () => {
 
         <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
           <Link 
-            to="/login"
+            to="/student"
             className="px-6 py-3.5 rounded-xl bg-white text-slate-900 font-bold text-sm shadow-xl hover:bg-slate-100 transition-all flex items-center gap-2 group hover:-translate-y-0.5"
           >
-            Access Workspace
+            Access Workspace Direct
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform text-slate-900" />
-          </Link>
-          <Link 
-            to="/register"
-            className="px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700/55 hover:-translate-y-0.5"
-          >
-            Create Student Profile
           </Link>
         </div>
 

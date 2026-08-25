@@ -33,7 +33,7 @@ const queryClient = new QueryClient({
 import { useAuth } from './context/AuthContext';
 
 export const RootRedirect: React.FC = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -43,14 +43,7 @@ export const RootRedirect: React.FC = () => {
     );
   }
 
-  if (isAuthenticated && user) {
-    const userRoles = user.roles.map((r) => r.name);
-    if (userRoles.includes('admin')) return <Navigate to="/admin" replace />;
-    if (userRoles.includes('tutor')) return <Navigate to="/tutor" replace />;
-    return <Navigate to="/student" replace />;
-  }
-
-  return <Landing />;
+  return <Navigate to="/student" replace />;
 };
 
 export const App: React.FC = () => {
@@ -60,41 +53,35 @@ export const App: React.FC = () => {
         <AuthProvider>
           <SocketProvider>
             <Routes>
-              {/* Public Routes */}
+              {/* Direct Workspace Routes */}
               <Route path="/" element={<RootRedirect />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Navigate to="/student" replace />} />
+              <Route path="/register" element={<Navigate to="/student" replace />} />
+              <Route path="/landing" element={<Landing />} />
 
-              {/* Protected Workspace Layout */}
+              {/* Workspace Layout */}
               <Route element={<ProtectedRoute />}>
-                {/* Landing Redirect checks role to forward home */}
                 <Route path="/dashboard" element={<DashboardRedirect />} />
                 
                 {/* Student Workspace */}
-                <Route element={<RoleGuard allowedRoles={['student']} />}>
-                  <Route path="/student" element={<Layout><StudentDashboard /></Layout>} />
-                  <Route path="/student/ask" element={<Layout><AskQuestion /></Layout>} />
-                  <Route path="/student/courses/enroll" element={<Layout><EnrollCourse /></Layout>} />
-                  <Route path="/student/courses/:courseId" element={<Layout><CourseWorkspace /></Layout>} />
-                </Route>
+                <Route path="/student" element={<Layout><StudentDashboard /></Layout>} />
+                <Route path="/student/ask" element={<Layout><AskQuestion /></Layout>} />
+                <Route path="/student/courses/enroll" element={<Layout><EnrollCourse /></Layout>} />
+                <Route path="/student/courses/:courseId" element={<Layout><CourseWorkspace /></Layout>} />
 
                 {/* Tutor Workspace */}
-                <Route element={<RoleGuard allowedRoles={['tutor']} />}>
-                  <Route path="/tutor" element={<Layout><TutorDashboard /></Layout>} />
-                  <Route path="/tutor/courses/:courseId/edit" element={<Layout><CourseBuilder /></Layout>} />
-                </Route>
+                <Route path="/tutor" element={<Layout><TutorDashboard /></Layout>} />
+                <Route path="/tutor/courses/:courseId/edit" element={<Layout><CourseBuilder /></Layout>} />
 
                 {/* Admin Workspace */}
-                <Route element={<RoleGuard allowedRoles={['admin']} />}>
-                  <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
-                </Route>
+                <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
 
                 {/* Shared Workspace routes */}
                 <Route path="/questions/:questionId" element={<Layout><QuestionDetails /></Layout>} />
               </Route>
 
               {/* Fallback Redirection */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/student" replace />} />
             </Routes>
           </SocketProvider>
         </AuthProvider>
